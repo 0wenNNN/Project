@@ -1,0 +1,583 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 06/03/2026 13:38:24
+
+00000000                             1  *-------------------------------------------------------
+00000000                             2  * STARTING MEMORY ADDRESS FOR THE PROGRAMME $1000
+00000000                             3  *-------------------------------------------------------
+00001000                             4      ORG $1000
+00001000                             5  *-------------------------------------------------------
+00001000                             6  *CHOOSE TO BE A MINI KNIGHT OR A TINY EXPLORER
+00001000                             7  *-------------------------------------------------------
+00001000                             8  
+00001000                             9  *-------------------------------------- -----------------
+00001000                            10  *VALIDATION VALUES TO BE USED, MODIFY AS NEEDED
+00001000                            11  *-------------------------------------------------------
+00001000  =00000000                 12  EXIT        EQU 0           ;USED TO EXIT ASSEMBLY PROGRAM
+00001000  =00000001                 13  MIN_POTIONS EQU 1           ;MIN NUMBER OF SMALL POTIONS
+00001000  =00000009                 14  MAX_POTIONS EQU 9           ;MAX NUMBER OF SMALL POTIONS
+00001000  =00000019                 15  DAMAGE      EQU 25          ;DMG VALUE
+00001000  =0000000A                 16  HEAL        EQU 10          ;HOW MUCH THE POTION HEALS
+00001000                            17  
+00001000                            18  
+00001000                            19  ;A2 WILL BE USED FOR ENEMY ARRAY
+00001000                            20  ;A4 WILL BE USED FOR PLAYER POSITION
+00001000                            21  ;A5 WILL BE USED FOR CLASSES
+00001000                            22  ;D2 WILL BE USED FOR HEALTH
+00001000                            23  ;D4 IS THE CURRENT CLASS
+00001000                            24  ;D7 IS JUST HOW MANY TURNS WILL GO
+00001000                            25  *START OF GAME
+00001000                            26  START:
+00001000  1E3C 000A                 27      MOVE.B  #10,D7     ; 10 turns BEFORE GAME ENDS
+00001004  6100 2004                 28      BSR     WELCOME
+00001008  6100 1FF6                 29      BSR     GAME
+0000100C  FFFF FFFF                 30      SIMHALT
+00001010                            31  
+00001010                            32  *GAME LOOP
+00003000                            33      ORG     $3000           ;THE REST OF THE PROGRAM IS TO BE LOCATED FROM 3000 ONWARDS
+00003000                            34  
+00003000                            35  *-------------------------------------------------------
+00003000                            36  *-------------------GAME SUBROUTINE---------------------
+00003000                            37  *-------------------------------------------------------
+00003000                            38  GAME:
+00003000  6100 0088                 39      BSR     GAMELOOP        ;BRANCH TO GAMELOOP SUBROUTINE
+00003004  4E75                      40      RTS                     ;RETURN FROM GAME: SUBROUTINE
+00003006                            41            
+00003006                            42  END:
+00003006  FFFF FFFF                 43      SIMHALT
+0000300A                            44  
+0000300A                            45  *-------------------------------------------------------
+0000300A                            46  *-------------------WELCOME SUBROUTINE------------------
+0000300A                            47  *-------------------------------------------------------
+0000300A                            48  WELCOME:
+0000300A  6100 0358                 49      BSR     ENDL
+0000300E  43F9 0000337D             50      LEA     WELCOME_MSG,A1
+00003014  103C 000E                 51      MOVE.B  #14,D0
+00003018  4E4F                      52      TRAP    #15          ; print message
+0000301A                            53  
+0000301A  103C 0004                 54      MOVE.B  #4,D0        ; read number
+0000301E  4E4F                      55      TRAP    #15          ; result goes into D0
+00003020  21C1 4000                 56      MOVE.L  D1 ,$4000
+00003024  2838 4000                 57      MOVE.L  $4000,D4
+00003028                            58      
+00003028                            59  
+00003028                            60  
+00003028  B83C 0001                 61      CMP.B   #1,D4        ;CHECK INPUT, IF 1 GO TO OPTION 1
+0000302C  6700 0014                 62      BEQ     WARRIOR
+00003030                            63  
+00003030  B83C 0002                 64      CMP.B   #2,D4       ;CHECK INPUT, IF 2, GO OPTION 2
+00003034  6700 0014                 65      BEQ     ROGUE
+00003038                            66      
+00003038  6100 032A                 67      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+0000303C  6100 030E                 68      BSR     CONTINUE        ;BRANCH TO CONTINUE SUBROUTINE 
+00003040  4E75                      69      RTS                     ;RETURN FROM WELCOME: SUBROUTINE
+00003042                            70  WARRIOR:
+00003042  2439 000036A4             71      MOVE.L  HEALTH_1,D2
+00003048  4E75                      72      RTS
+0000304A                            73  ROGUE:
+0000304A  2439 000036A8             74      MOVE.L HEALTH_2,D2
+00003050  4E75                      75      RTS
+00003052                            76  *-------------------------------------------------------
+00003052                            77  *---------GAMEPLAY INPUT VALUES SUBROUTINE--------------
+00003052                            78  *-------------------------------------------------------    
+00003052                            79  INPUT:
+00003052  4A79 00003490             80      TST.W   POTION_COUNT    ;cmp potion with 0
+00003058  6700 0022                 81      BEQ     SKIP_POTIONS     ; none available
+0000305C  6100 0004                 82      BSR     POTION_ROUTINE  ; use potion
+00003060  4E75                      83      RTS
+00003062                            84  POTION_ROUTINE:
+00003062  6100 007C                 85      BSR     POTIONS         ;BRANCH TO POTION INPUT SUBROUTINE
+00003066  6100 02FC                 86      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+0000306A  6100 02E0                 87      BSR     CONTINUE        ;BRANCH TO CONTINUE SUBROUTINE
+0000306E  6100 00EE                 88      BSR     WEAPONS         ;BRANCH TO WEAPONS INPUT SUBROUTINE
+00003072  6100 02F0                 89      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+00003076  6100 02D4                 90      BSR     CONTINUE        ;BRANCH TO CONTINUE SUBROUTINE
+0000307A  4E75                      91      RTS
+0000307C                            92  ;THE SAME AS THE ORIGINAL INPUT BUT IT SKIPS THE POTION PART
+0000307C                            93  SKIP_POTIONS:
+0000307C  6100 00E0                 94      BSR     WEAPONS
+00003080  6100 02E2                 95      BSR     ENDL
+00003084  6100 02C6                 96      BSR     CONTINUE
+00003088  4E75                      97      RTS
+0000308A                            98  *-------------------------------------------------------
+0000308A                            99  *----------------GAMELOOP (MAIN LOOP)-------------------
+0000308A                           100  *------------------------------------------------------- 
+0000308A                           101  GAMELOOP:
+0000308A                           102      ; Your existing game logic:
+0000308A  61C6                     103      BSR     INPUT
+0000308C  6100 001E                104      BSR     UPDATE
+00003090  6100 0034                105      BSR     DRAW
+00003094  6100 0104                106      BSR     GAMEPLAY
+00003098  6100 01AC                107      BSR     HUD
+0000309C                           108      
+0000309C                           109      ;check health before that, if 0 then game over
+0000309C  4A82                     110      TST.L   D2
+0000309E  6F00 029C                111      BLE     GAME_OVER
+000030A2                           112      ; Decrease loop counter and check if its 0 then you win!
+000030A2  5307                     113      SUB.B  #1,D7
+000030A4  4A07                     114      TST.B  D7
+000030A6  6700 0280                115      BEQ    YOU_WIN    ; if 0 turns left ? game ends
+000030AA  60DE                     116      BRA    GAMELOOP     ; else continue      
+000030AC                           117  
+000030AC                           118  *-------------------------------------------------------
+000030AC                           119  *----------------UPDATE QUEST PROGRESS------------------
+000030AC                           120  *  COMPLETE QUEST
+000030AC                           121  *------------------------------------------------------- 
+000030AC                           122  UPDATE:
+000030AC  6100 02B6                123      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+000030B0  6100 024C                124      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE  
+000030B4                           125   
+000030B4  43F9 0000352C            126      LEA     UPDATE_MSG,A1   ;ASSIGN MESSAGE TO ADDRESS REGISTER A1 
+000030BA  103C 000E                127      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+000030BE  4E4F                     128      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+000030C0                           129  
+000030C0  6100 023C                130      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+000030C4  4E75                     131      RTS                     
+000030C6                           132  
+000030C6                           133  *-------------------------------------------------------
+000030C6                           134  *-----------------DRAW QUEST UPDATES--------------------
+000030C6                           135  * DRAW THE GAME PROGRESS INFORMATION, STATUS REGARDING
+000030C6                           136  * QUEST
+000030C6                           137  *------------------------------------------------------- 
+000030C6                           138  DRAW:
+000030C6  6100 029C                139      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE            
+000030CA  6100 0232                140      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE    
+000030CE  43F9 00003569            141      LEA     DRAW_MSG,A1     ;ASSIGN MESSAGE TO ADDRESS REGISTER A1     
+000030D4  103C 000E                142      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+000030D8  4E4F                     143      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+000030DA  6100 0222                144      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+000030DE  4E75                     145      RTS                     ;RETURN FROM DRAW: SUBROUTINE
+000030E0                           146  
+000030E0                           147  *-------------------------------------------------------
+000030E0                           148  *--------------------POTIONS INVENTORY---------------------
+000030E0                           149  * NUMBER OF POTIONS TO BE USED IN A QUEST 
+000030E0                           150  *------------------------------------------------------- 
+000030E0                           151  ;D6 IS AMOUNT OF POTIONS YOU WANT TO USE
+000030E0                           152  POTIONS:
+000030E0  6100 0282                153      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+000030E4  6100 0218                154      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+000030E8                           155      
+000030E8  43F9 000034E9            156      LEA     POTIONS_RECAP,A1  ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+000030EE  103C 000E                157      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+000030F2  4E4F                     158      TRAP    #15 
+000030F4                           159      
+000030F4  3239 00003490            160      MOVE.W  POTION_COUNT,D1           
+000030FA  103C 0003                161      MOVE.B  #3,D0           ;MOVE LITERAL 3 TO DO    
+000030FE  4E4F                     162      TRAP    #15 
+00003100                           163      
+00003100  43F9 0000345F            164      LEA     POTIONS_MSG,A1  ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+00003106  103C 000E                165      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+0000310A  4E4F                     166      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+0000310C                           167      
+0000310C  103C 0004                168      MOVE.B  #4,D0           ;HOW MANY POTIONS YOU WANT TO USE
+00003110  4E4F                     169      TRAP    #15
+00003112  1C01                     170      MOVE.B  D1,D6
+00003114                           171     
+00003114  4A06                     172      TST.B D6                ;incase they type 0
+00003116  6700 0040                173      BEQ DONE_HEAL
+0000311A                           174      
+0000311A  BC79 00003490            175      CMP.W   POTION_COUNT,D6
+00003120  6E00 0006                176      BGT     CLAMP_TO_MAX
+00003124  6000 0008                177      BRA     GET_HEAL
+00003128                           178  
+00003128                           179  CLAMP_TO_MAX:
+00003128  1C39 00003490            180      MOVE.B POTION_COUNT,D6 ;automatically pushes the number in potion count to d6 if you input more than you own
+0000312E                           181  GET_HEAL:
+0000312E  4A06                     182      TST.B D6
+00003130  6700 0026                183      BEQ DONE_HEAL
+00003134                           184  
+00003134  0682 0000000A            185      ADD.L #HEAL,D2
+0000313A  5379 00003490            186      SUB.W #1,POTION_COUNT
+00003140  5306                     187      SUB.B #1,D6
+00003142                           188      
+00003142  43F9 00003492            189      LEA     HEAL_MSG,A1  ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+00003148  103C 000E                190      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+0000314C  4E4F                     191      TRAP    #15
+0000314E                           192      
+0000314E  2202                     193      MOVE.L  D2,D1           ;MOVE D2 AND MOVE TO D1
+00003150  103C 0003                194      MOVE.B  #3,D0           ;MOVE LITERAL 3 TO D0    
+00003154  4E4F                     195      TRAP    #15
+00003156                           196      
+00003156  60D6                     197      BRA GET_HEAL
+00003158                           198  DONE_HEAL:
+00003158  6100 01A4                199      BSR DECORATE
+0000315C  4E75                     200      RTS
+0000315E                           201  *-------------------------------------------------------
+0000315E                           202  *-------------------------WEAPONS-----------------------
+0000315E                           203  * NUMBER OF WEAPONS
+0000315E                           204  *-S------------------------------------------------------   
+0000315E                           205  WEAPONS:
+0000315E  6100 0204                206      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+00003162  6100 019A                207      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+00003166                           208      
+00003166  B83C 0001                209      CMP.B   #1,D4        ;CHECK INPUT, IF 1 GO TO WARRIOR WEAPON
+0000316A  6700 000A                210      BEQ     WARRIOR_WEAPON
+0000316E                           211  
+0000316E  B83C 0002                212      CMP.B   #2,D4         ;CHECK INPUT, IF 2 GO TO ROGUE WEAPON
+00003172  6700 0014                213      BEQ     ROGUE_WEAPON
+00003176                           214      
+00003176                           215  WARRIOR_WEAPON:
+00003176  43F9 000034CC            216      LEA     WEAPONS_MSG_1,A1  ;ASSIGN MESSAGE TO ADDRESS REGISTER A1      
+0000317C  103C 000E                217      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+00003180  4E4F                     218      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+00003182  6100 017A                219      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+00003186  4E75                     220      RTS                     ;RETURN FROM WEAPONS: SUBROUTINE
+00003188                           221  ROGUE_WEAPON:
+00003188  43F9 000034FB            222      LEA     WEAPONS_MSG_2,A1  ;ASSIGN MESSAGE TO ADDRESS REGISTER A1      
+0000318E  103C 000E                223      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+00003192  4E4F                     224      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+00003194  6100 0168                225      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+00003198  4E75                     226      RTS                     ;RETURN FROM WEAPONS: SUBROUTINE
+0000319A                           227  *-------------------------------------------------------
+0000319A                           228  *---GAME PLAY (QUEST PROGRESS)--------------------------
+0000319A                           229  *------------------------------------------------------- 
+0000319A                           230  GAMEPLAY:
+0000319A  6100 01C8                231      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+0000319E  6100 015E                232      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+000031A2  43F9 0000351A            233      LEA     GAMEPLAY_MSG,A1 ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+000031A8  103C 000E                234      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+000031AC  4E4F                     235      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+000031AE  103C 0004                236      MOVE.B  #4,D0           ;MOVE LITERAL 4 TO DO               
+000031B2  4E4F                     237      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+000031B4  6100 0008                238      BSR     PATH            ;BRANCH TO PATH
+000031B8  6100 0144                239      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+000031BC                           240      ;BSR     COLLISION       ;BRANCH TO COLLISION SUBROUTINE
+000031BC  4E75                     241      RTS                     ;RETURN FROM GAMEPLAY: SUBROUTINE
+000031BE                           242  
+000031BE                           243  PATH:
+000031BE  43F9 000035E5            244      LEA     CHOOSE_MSG,A1 ;SHOWS THE PATH OPTIONS
+000031C4  103C 000E                245      MOVE.B  #14,D0        ; PRINT MESSAGE
+000031C8  4E4F                     246      TRAP    #15
+000031CA  103C 0004                247      MOVE.B  #4,D0        ; read number
+000031CE  4E4F                     248      TRAP    #15          ; result goes into D0
+000031D0  B23C 0001                249      CMP.B   #1,D1
+000031D4  6700 000C                250      BEQ     RISKY_PATH       ;MOVES TO RISKY PATH LOGIC
+000031D8  B23C 0002                251      CMP.B   #2,D1
+000031DC  6700 001E                252      BEQ     SAFER_PATH       ;MOVES TO SAFE PATH LOGIC
+000031E0  60DC                     253      BRA     PATH
+000031E2                           254  RISKY_PATH:
+000031E2  6100 002E                255      BSR     CHECK_FOR_POTION
+000031E6  303C 0008                256      MOVE.W  #8,D0       ; Task 8: Get System Time 
+000031EA  4E4F                     257      TRAP    #15         ; Time goes into D1
+000031EC                           258      
+000031EC  0241 000F                259      ANDI.W  #$F,D1      ; use and to cut the value down so D1 is now a random number between 0 and 15.
+000031F0                           260  
+000031F0  B27C 000D                261      CMP.W   #13,D1      ; 13/15 close enough to, 70ish% (found this idea online, it works)
+000031F4  6D00 0072                262      BLT     COLLISION   ; If D1 < 10, trigger the fight!
+000031F8  6000 003E                263      BRA     SAFE_MESSAGE ; If D1 is 11, 12, 13, 14, or 15, you're safe.
+000031FC                           264  SAFER_PATH:
+000031FC  303C 0008                265      MOVE.W  #8,D0       ; Get System Time
+00003200  4E4F                     266      TRAP    #15         ; Time goes into D1
+00003202                           267      
+00003202  0241 000F                268      ANDI.W  #$F,D1      ; Mask to range 0-15
+00003206                           269  
+00003206  B27C 0006                270      CMP.W   #6,D1       ; 6/15 which is 40% of an encounter
+0000320A  6D00 005C                271      BLT     COLLISION   ; ~40% chance to branch to the fight
+0000320E  6000 0028                272      BRA     SAFE_MESSAGE ; ~60% chance you are safe
+00003212                           273  CHECK_FOR_POTION:
+00003212  303C 0008                274      MOVE.W  #8,D0            ; Get System Time
+00003216  4E4F                     275      TRAP    #15               ; Time goes into D1
+00003218  0241 000F                276      ANDI.W  #$F,D1            ; Mask to 0-15 (0-15 range)
+0000321C                           277  
+0000321C  B27C 0006                278      CMP.W   #6,D1
+00003220  6C00 0014                279      BGE     NO_POTION         ; If D1 >= 5, skip potion
+00003224                           280  
+00003224                           281  GAIN_POTION:
+00003224  43F9 000034B7            282      LEA     GAIN_POTION_MSG,A1
+0000322A  103C 000E                283      MOVE.B  #14,D0
+0000322E  4E4F                     284      TRAP    #15
+00003230  5279 00003490            285      ADD.W   #1,POTION_COUNT
+00003236                           286  
+00003236                           287  NO_POTION:
+00003236  4E75                     288      RTS
+00003238                           289  SAFE_MESSAGE:
+00003238  43F9 0000355E            290      LEA     SAFE_MSG,A1  
+0000323E  303C 000E                291      MOVE    #14,D0              
+00003242  4E4F                     292      TRAP    #15             ;PRINT ENCOUNTER MSG
+00003244  4E75                     293      RTS
+00003246                           294  *-------------------------------------------------------
+00003246                           295  *-----------------HEADS UP DISPLAY (SCORE)--------------
+00003246                           296  *-------------------------------------------------------   
+00003246                           297  HUD:
+00003246  6100 011C                298      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+0000324A  6100 00B2                299      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE
+0000324E  43F9 00003693            300      LEA     HUD_MSG,A1      ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+00003254  103C 000E                301      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+00003258  4E4F                     302      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+0000325A  2202                     303      MOVE.L  D2,D1           ;MOVE D2 AND MOVE TO D1
+0000325C  103C 0003                304      MOVE.B  #3,D0           ;MOVE LITERAL 3 TO D0   
+00003260  4E4F                     305      TRAP    #15               
+00003262  6100 009A                306      BSR     DECORATE        ;BRANCH TO DECORATE SUBROUTINE    
+00003266  4E75                     307      RTS                     
+00003268                           308  
+00003268                           309  *-------------------------------------------------------
+00003268                           310  *-----------------------BEING ATTACKED------------------
+00003268                           311  * THIS COULD BE USED FOR COLLISION DETECTION
+00003268                           312  *-------------------------------------------------------
+00003268                           313  ;A2 WILL BE USED FOR ENEMY ARRAY
+00003268                           314  COLLISION:
+00003268  43F9 00003545            315      LEA     ENCOUNTER_MSG,A1  
+0000326E  303C 000E                316      MOVE    #14,D0              
+00003272  4E4F                     317      TRAP    #15             ;PRINT ENCOUNTER MSG   
+00003274  6100 0004                318      BSR     CHECK_CLASS     ;CHECK FOR CLASS
+00003278  4E75                     319      RTS                     ;RETURN FROM COLLISION: SUBROUTINE  
+0000327A                           320  CHECK_CLASS:
+0000327A  B83C 0001                321      CMP.B   #1,D4         ;CHECK INPUT, IF 1 GO TO OPTION 1
+0000327E  6700 000C                322      BEQ     WARRIOR_DODGE
+00003282                           323  
+00003282  B83C 0002                324      CMP.B   #2,D4         ;CHECK INPUT, IF 2, GO OPTION 2
+00003286  6700 001A                325      BEQ     ROGUE_DODGE
+0000328A                           326      
+0000328A  4E75                     327      RTS
+0000328C                           328  WARRIOR_DODGE:
+0000328C  303C 0008                329      MOVE.W  #8,D0       ; Task 8: Get System Time 
+00003290  4E4F                     330      TRAP    #15         ; Time goes into D1
+00003292                           331      
+00003292  0241 000F                332      ANDI.W  #$F,D1      ; use and to cut the value down so D1 is now a random number between 0 and 15.
+00003296  B27C 0004                333      CMP.W   #4,D1      
+0000329A                           334      
+0000329A  6D00 0040                335      BLT COLLISION_MISS 
+0000329E  6C00 0018                336      BGE COLLISION_HIT
+000032A2                           337  ROGUE_DODGE:
+000032A2  303C 0008                338      MOVE.W  #8,D0       ;Get System Time 
+000032A6  4E4F                     339      TRAP    #15         ; Time goes into D1
+000032A8                           340      
+000032A8  0241 000F                341      ANDI.W  #$F,D1      ; use and to cut the value down so D1 is now a random number between 0 and 15.
+000032AC  B27C 0009                342      CMP.W   #9,D1      
+000032B0  6D00 002A                343      BLT COLLISION_MISS 
+000032B4                           344  
+000032B4  6C00 0002                345      BGE COLLISION_HIT
+000032B8                           346  COLLISION_HIT: 
+000032B8  43F9 0000357C            347      LEA     HIT_MSG,A1     ;just printing the hit msg
+000032BE  303C 000E                348      MOVE    #14,D0
+000032C2  4E4F                     349      TRAP    #15
+000032C4                           350  
+000032C4  2202                     351      MOVE.L  D2,D1        ; load current health
+000032C6  0481 00000019            352      SUB.L   #DAMAGE,D1     ; subtract damage
+000032CC  2401                     353      MOVE.L  D1,D2        ; store back
+000032CE                           354      
+000032CE                           355  
+000032CE  B2BC 00000000            356      CMP.L   #0,D1
+000032D4  6E00 0004                357      BGT     SAFE
+000032D8                           358  
+000032D8  4282                     359      CLR.L   D2           ; if <= 0, set to 0
+000032DA                           360  
+000032DA                           361  SAFE:
+000032DA  4E75                     362      RTS
+000032DC                           363  
+000032DC                           364  COLLISION_MISS:
+000032DC  43F9 00003593            365      LEA     DODGE_MSG,A1        ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+000032E2  303C 000E                366      MOVE    #14,D0          ;MOVE LITERAL 14 TO DO
+000032E6  4E4F                     367      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+000032E8  4E75                     368      RTS                     ;RETURN FROM COLLISION_MISS: SUBROUTINE
+000032EA                           369  *-------------------------------------------------------
+000032EA                           370  *--------------------------LOOP-------------------------
+000032EA                           371  *-------------------------------------------------------
+000032EA                           372  LOOP:
+000032EA  163C 0005                373      MOVE.B  #5, D3          ;LOOP COUNTER D3=5
+000032EE                           374  NEXT:
+000032EE  43F9 000035A8            375      LEA     LOOP_MSG,A1     ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+000032F4  103C 000E                376      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO          
+000032F8  4E4F                     377      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+000032FA  5343                     378      SUB     #1,D3           ;DECREMENT LOOP COUNTER
+000032FC  66F0                     379      BNE     NEXT            ;REPEAT UNTIL D0=0
+000032FE                           380  
+000032FE                           381  *-------------------------------------------------------
+000032FE                           382  *------------------SCREEN DECORATION--------------------
+000032FE                           383  *-------------------------------------------------------
+000032FE                           384  DECORATE:
+000032FE  163C 0006                385      MOVE.B  #6, D3         ;LOOP COUNTER D3=60
+00003302  6100 0060                386      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+00003306                           387  OUT:
+00003306  43F9 000035A8            388      LEA     LOOP_MSG,A1     ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+0000330C  103C 000E                389      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+00003310  4E4F                     390      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+00003312  5343                     391      SUB     #1,D3           ;DECREMENT LOOP COUNTER
+00003314  66F0                     392      BNE     OUT             ;REPEAT UNTIL D0=0
+00003316  6100 004C                393      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+0000331A  4E75                     394      RTS                     ;RETURN FROM DECORATE: SUBROUTINE
+0000331C                           395      
+0000331C                           396  CLEAR_SCREEN: 
+0000331C  103C 000B                397      MOVE.B  #11,D0          ;CLEAR SCREEN
+00003320  323C FF00                398      MOVE.W  #$FF00,D1       ;SET COLOUR
+00003324  4E4F                     399      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+00003326  4E75                     400      RTS                     ;RETURN FROM CLEAR_SCREEN: SUBROUTINE                
+00003328                           401  
+00003328                           402  *-------------------------------------------------------
+00003328                           403  *------------------------GAME OVER-------------------------
+00003328                           404  *-------------------------------------------------------
+00003328                           405  YOU_WIN:
+00003328  B47C 0000                406      CMP     #0,D2
+0000332C  6F00 000E                407      BLE     GAME_OVER
+00003330  43F9 000035AA            408      LEA     WIN_MSG,A1
+00003336  103C 000E                409      MOVE.B  #14,D0
+0000333A  4E4F                     410      TRAP    #15 
+0000333C                           411  GAME_OVER:
+0000333C  43F9 000035C0            412      LEA     GAME_OVER_MSG,A1
+00003342  103C 000E                413      MOVE.B  #14,D0
+00003346  4E4F                     414      TRAP    #15          ; print game over message
+00003348  FFFF FFFF                415      SIMHALT              ; stop program
+0000334C                           416      
+0000334C                           417  *-------------------------------------------------------
+0000334C                           418  *------------------------CONTINUE-------------------------
+0000334C                           419  *-------------------------------------------------------
+0000334C                           420  CONTINUE:
+0000334C  6100 0016                421      BSR     ENDL            ;BRANCH TO ENDL SUBROUTINE
+00003350  43F9 000035CA            422      LEA     CONTINUE_MSG,A1 ;ASSIGN MESSAGE TO ADDRESS REGISTER A1
+00003356  103C 000E                423      MOVE.B  #14,D0          ;MOVE LITERAL 14 TO DO
+0000335A  4E4F                     424      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+0000335C                           425      
+0000335C  103C 0004                426      MOVE.B  #4,D0           ;MOVE LITERAL 4 TO DO
+00003360  4E4F                     427      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+00003362  4E75                     428      RTS                     ;RETURN FROM SUBROUTINE 
+00003364                           429  
+00003364                           430  ENDL:
+00003364  48E7 8040                431      MOVEM.L D0/A1,-(A7)     ;SAVE D0 AND A1
+00003368  303C 000E                432      MOVE    #14,D0          ;MOVE LITERAL 14 TO DO
+0000336C  43F9 0000337A            433      LEA     CRLF,A1         ;ASSIGN CRLF TO ADDRESS REGISTER A1
+00003372  4E4F                     434      TRAP    #15             ;TRAP AND INTERPRET VALUE IN D0
+00003374  4CDF 0201                435      MOVEM.L (A7)+,D0/A1     ;RESTORE D0 AND A1
+00003378  4E75                     436      RTS                     ;RETURN FROM ENDL: SUBROUTINE
+0000337A                           437      
+0000337A                           438  *-------------------------------------------------------
+0000337A                           439  *-------------------DATA DECLARATIONS--------------------
+0000337A                           440  *-------------------------------------------------------
+0000337A                           441  
+0000337A= 0D 0A 00                 442  CRLF:           DC.B    $0D,$0A,0
+0000337D= 2A 2A 2A 2A 2A 2A ...    443  WELCOME_MSG:    DC.B    '************************************************************'
+000033B9= 0D 0A                    444                  DC.B    $0D,$0A
+000033BB= 57 45 4C 43 4F 4D ...    445                  DC.B    'WELCOME TO YOUR ADVENTURE! '
+000033D6= 0D 0A                    446                  DC.B    $0D,$0A
+000033D8= 43 48 4F 4F 53 45 ...    447                  DC.B    'CHOOSE YOUR ADVENTURER:'
+000033EF= 0D 0A                    448                  DC.B    $0D,$0A
+000033F1= 31 2E 20 57 41 52 ...    449                  DC.B    '1. WARRIOR (TANKY)'
+00003403= 0D 0A                    450                  DC.B    $0D,$0A
+00003405= 32 2E 20 52 4F 47 ...    451                  DC.B    '2. ROGUE (FAST AND AGILE)'
+0000341E= 0D 0A                    452                  DC.B    $0D,$0A
+00003420= 2A 2A 2A 2A 2A 2A ...    453                  DC.B    '************************************************************'
+0000345C= 0D 0A 00                 454                  DC.B    $0D,$0A,0
+0000345F= 0D 0A                    455  POTIONS_MSG:    DC.B    $0D,$0A
+00003461= 48 4F 57 20 4D 41 ...    456                  DC.B    'HOW MANY POTIONS WOULD YOU LIKE TO DRINK: ',0
+0000348C= 00000001                 457  PLAYER_X        DC.L    1
+00003490= 0000                     458  POTION_COUNT    DC.W    0
+00003492= 59 4F 55 20 47 4F ...    459  HEAL_MSG        DC.B    'YOU GOT HEALED! YOUR HEALTH IS NOW: ',0
+000034B7= 59 4F 55 20 47 4F ...    460  GAIN_POTION_MSG DC.B    'YOU GOT A POTION!',0
+000034C9= 0D 0A 00                 461                  DC.B    $0D,$0A,0
+000034CC= 45 51 55 49 50 20 ...    462  WEAPONS_MSG_1:  DC.B    'EQUIP WEAPONS: SWORD,SHIELD.',0
+000034E9= 59 4F 55 52 20 50 ...    463  POTIONS_RECAP   DC.B    'YOUR POTIONS',0
+000034F6= 0D 0A                    464                  DC.B    $0D,$0A
+000034F8= 0D 0A 00                 465                  DC.B    $0D,$0A,0
+000034FB= 45 51 55 49 50 20 ...    466  WEAPONS_MSG_2:  DC.B    'EQUIP WEAPONS: DAGGER,DAGGER.',0
+00003519= 01                       467  TURN1_CHECK     DC.B    1
+0000351A= 41 44 56 45 4E 54 ...    468  GAMEPLAY_MSG:   DC.B    'ADVENTURE BEGINS!',0
+0000352C= 55 50 44 41 54 49 ...    469  UPDATE_MSG:     DC.B    'UPDATING QUEST STATUS...',0
+00003545= 55 48 20 4F 48 2C ...    470  ENCOUNTER_MSG:  DC.B    'UH OH, FOUND AN ENEMY',0
+0000355B= 0D 0A 00                 471                  DC.B    $0D,$0A,0
+0000355E= 53 41 46 45 20 50 ...    472  SAFE_MSG:       DC.B    'SAFE PATH!',0
+00003569= 52 45 44 52 41 57 ...    473  DRAW_MSG:       DC.B    'REDRAWING WORLD...',0
+0000357C= 0D 0A                    474  HIT_MSG:        DC.B    $0D,$0A
+0000357E= 4F 48 20 4E 4F 21 ...    475                  DC.B    'OH NO! YOU WERE HIT!',0
+00003593= 0D 0A                    476  DODGE_MSG:      DC.B    $0D,$0A
+00003595= 53 41 46 45 21 20 ...    477                  DC.B    'SAFE! YOU DODGED!.',0
+000035A8= 2E 00                    478  LOOP_MSG:       DC.B    '.',0
+000035AA= 59 4F 55 20 4D 41 ...    479  WIN_MSG:        DC.B    'YOU MADE IT! YOU WIN!',0
+000035C0= 47 41 4D 45 5F 4F ...    480  GAME_OVER_MSG:  DC.B    'GAME_OVER',0
+000035CA= 50 52 45 53 53 20 ...    481  CONTINUE_MSG:   DC.B    'PRESS ANYKEY TO CONTINUE: ',0
+000035E5= 50 49 43 4B 20 41 ...    482  CHOOSE_MSG:     DC.B    'PICK A PATH (TYPE 1 OR 2)'
+000035FE= 0D 0A                    483                  DC.B    $0D,$0A
+00003600= 2A 2A 2A 2A 2A 2A ...    484                  DC.B    '************************************************************'
+0000363C= 0D 0A                    485                  DC.B    $0D,$0A
+0000363E= 52 49 53 4B 59 20 ...    486                  DC.B    'RISKY  :1'
+00003647= 0D 0A                    487                  DC.B    $0D,$0A
+00003649= 53 41 46 46 45 52 ...    488                  DC.B    'SAFFER :2'
+00003652= 0D 0A                    489                  DC.B    $0D,$0A
+00003654= 2A 2A 2A 2A 2A 2A ...    490                  DC.B    '************************************************************'
+00003690= 0D 0A 00                 491                  DC.B    $0D,$0A,0
+00003693= 48 45 41 4C 54 48 ...    492  HUD_MSG:        DC.B    'HEALTH POINTS: ',0
+000036A4= 00000064                 493  HEALTH_1:       DC.L    100   ;PLAYERS HEALTH FOR WARRIOR
+000036A8= 00000037                 494  HEALTH_2:       DC.L    55    ;PLAYERS HEALTH FOR ROGUE
+000036AC                           495  
+000036AC                           496      END START
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+CHECK_CLASS         327A
+CHECK_FOR_POTION    3212
+CHOOSE_MSG          35E5
+CLAMP_TO_MAX        3128
+CLEAR_SCREEN        331C
+COLLISION           3268
+COLLISION_HIT       32B8
+COLLISION_MISS      32DC
+CONTINUE            334C
+CONTINUE_MSG        35CA
+CRLF                337A
+DAMAGE              19
+DECORATE            32FE
+DODGE_MSG           3593
+DONE_HEAL           3158
+DRAW                30C6
+DRAW_MSG            3569
+ENCOUNTER_MSG       3545
+END                 3006
+ENDL                3364
+EXIT                0
+GAIN_POTION         3224
+GAIN_POTION_MSG     34B7
+GAME                3000
+GAMELOOP            308A
+GAMEPLAY            319A
+GAMEPLAY_MSG        351A
+GAME_OVER           333C
+GAME_OVER_MSG       35C0
+GET_HEAL            312E
+HEAL                A
+HEALTH_1            36A4
+HEALTH_2            36A8
+HEAL_MSG            3492
+HIT_MSG             357C
+HUD                 3246
+HUD_MSG             3693
+INPUT               3052
+LOOP                32EA
+LOOP_MSG            35A8
+MAX_POTIONS         9
+MIN_POTIONS         1
+NEXT                32EE
+NO_POTION           3236
+OUT                 3306
+PATH                31BE
+PLAYER_X            348C
+POTIONS             30E0
+POTIONS_MSG         345F
+POTIONS_RECAP       34E9
+POTION_COUNT        3490
+POTION_ROUTINE      3062
+RISKY_PATH          31E2
+ROGUE               304A
+ROGUE_DODGE         32A2
+ROGUE_WEAPON        3188
+SAFE                32DA
+SAFER_PATH          31FC
+SAFE_MESSAGE        3238
+SAFE_MSG            355E
+SKIP_POTIONS        307C
+START               1000
+TURN1_CHECK         3519
+UPDATE              30AC
+UPDATE_MSG          352C
+WARRIOR             3042
+WARRIOR_DODGE       328C
+WARRIOR_WEAPON      3176
+WEAPONS             315E
+WEAPONS_MSG_1       34CC
+WEAPONS_MSG_2       34FB
+WELCOME             300A
+WELCOME_MSG         337D
+WIN_MSG             35AA
+YOU_WIN             3328
